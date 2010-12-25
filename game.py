@@ -45,7 +45,7 @@ class Game:
         return -1
 
     def isActive(this):
-            return this.active
+        return this.active
 
     def kill(this,shooterNum,targetNum):
         shooter = this.getPlayer(shooterNum)
