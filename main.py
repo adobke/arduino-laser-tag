@@ -8,31 +8,28 @@ import time
 import wsserve
 
 SERIALLOG = 'slog.log'
-GAMELOG = 'glog.log'
-PSCORES = 'pscores' # +num etc
-TSCORES = 'tscores.json'
+glog = 'glog.log'
 
 game = 0
 
 def main():
     global game
-    print "Starting up"
-    print "Connecting to xbee... "
+    log(glog,"Starting up" + time.ctime())
+    log(glog,"Connecting to xbee... ")
     xbee = xConnect()
     
     numPlayers = 16
     numTeams = 2
     xbee.flushInput()
 
-    print "Creating a new game"
+    log(glog,"Creating a new game")
     game = Game(numPlayers,numTeams,15,15)
     
-    print "Starting serial monitor"
+    log(glog,"Starting serial monitor")
     thread.start_new_thread(monitorSerial,(xbee,))
-    print "Starting socket server"
+    log(glog,"Starting socket server")
     thread.start_new_thread(wsserve.start,(socketCommand,))
 
-    server = startServer()
     writeSerial(xbee,'i44')
     time.sleep(1)
     writeSerial(xbee,'s')
@@ -45,7 +42,6 @@ def main():
             run = False
         print command(cin, game)
         time.sleep(.1)
-    server.shutdown()
 
 def socketCommand(commandstr = 'score'):
     global game
@@ -54,16 +50,19 @@ def socketCommand(commandstr = 'score'):
 def command(command,game = game):
     command = command.split()
     if command[0] == "kill":
-        return game.kill(int(command[1]),int(command[2]))
+        killmsg  = game.getTime() + game.kill(int(command[1]),int(command[2]))
+        log(glog,killmsg)
+        return killmsg
     
     elif command[0] == "endround":
         if not game.active:
             return "Game is not active"
         game.endRound()
+        log(glog,game.getTime(),"---endround---")
         return "Game ended"
 
     elif command[0] == "score":
-        return getScore(game)
+        return game.getScore() 
 
     elif command[0] == "players":
         return str(game.players)
@@ -74,19 +73,13 @@ def command(command,game = game):
     elif command[0] == "startgame":
         if game.active:
             return "Game already started"
-        thread.start_new_thread(writeXml,(game,))
         game.startGame()
+        log(glog,game.getTime(),"---startround---")
         return "Game Started"
 
     elif command[0] =="isGameActive":
         return game.active
 
-    elif command[0] =="start":
-        return ""
-    
-    elif command[0] == "stopserve":
-        server.shutdown()
-        return "server.shutdown sent"
     else:
         return "nothing"
 
@@ -96,6 +89,7 @@ def log(filename,string):
     f.write(string + '\n')
     f.close()
 
+### not used atm
 def readPacket(ser):
     packet = ''
     started = False
@@ -180,6 +174,7 @@ def xConnect():
         return xConnect()
 
 def writeSerial(ser,string):
+    log(SERIALLOG,">>> " + string)
     ser.write("<")
     for char in string:
         ser.write(string)
@@ -192,8 +187,7 @@ def monitorSerial(ser):
             data = ser.readline()
             if not data=="\n":
                 processSerial(data)
-                print "\t\t\t >>" + data[:-1]
-
+                log(SERIALLOG,data[:-1])
     return
 
 def processSerial(data):
@@ -201,7 +195,7 @@ def processSerial(data):
     data = data.split()
     if len(data) > 0:
         if data[0] == 'k':
-            print commandServe("kill " + data[1] + " " + data[2])
+            print socketCommand("kill " + data[1] + " " + data[2])
     return
 '''
 class MyTCPHandler(SocketServer.BaseRequestHandler):

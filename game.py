@@ -71,7 +71,7 @@ class Game:
         dtime = datetime.datetime.now() - this.startTime
         return int(dtime.total_seconds())
 
-    def getScore():
+    def getScore(this):
         teamscores = []
         for team in this.teams:
             teamscores.append([team,team.getScore()])
