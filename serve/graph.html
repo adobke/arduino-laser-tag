@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <script src="RGraph.common.core.js"></script>
+        <script src="RGraph.line.js"></script>
+    </head>
+    <body>
+        <canvas id="cvs" width="600" height="250">[No canvas support]</canvas>
+
+        <script>
+            d1 = [];
+            d2 = [];
+            function getGraph(id, d1, d2)
+            {
+                var graph = new RGraph.Line(id, d1, d2);
+                graph.Set('chart.gutter',25);
+                graph.Set('chart.background.barcolor1', 'white');
+                graph.Set('chart.background.barcolor2', 'white');
+                graph.Set('chart.title.xaxis', 'Time');
+                graph.Set('chart.colors', ['green', 'red']);
+                graph.Set('chart.linewidth', 2);
+                graph.Set('chart.ymax', 20);
+                graph.Set('chart.xticks', 22);
+
+                return graph;
+            }
+
+            function drawGraph (e)
+            {
+                // Clear the canvas and redraw the graph
+                RGraph.Clear(document.getElementById("cvs"));
+                var graph = getGraph('cvs', d1, d2);
+                graph.Draw();
+
+                // Add some data to the data arrays
+                d1.push(RGraph.random(5, 10));
+                d2.push(RGraph.random(5, 10));
+
+                /* Get rid of the first values of the arrays
+                if (d1.length > 100) {
+                    d1 = RGraph.array_shift(d1);
+                    d2 = RGraph.array_shift(d2);
+                }
+*/
+                setTimeout(drawGraph,250);
+            }
+            drawGraph();
+        </script>
+    </body>
+</html>

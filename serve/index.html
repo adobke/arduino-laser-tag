@@ -1,0 +1,172 @@
+<html>
+    <head>
+        <style type="text/css">
+            html, body {
+                width:  100%;
+                height: 100%;
+                margin:0px;
+            }
+            #playerinfo {
+                width: 100%;
+                margin-left:auto;
+                margin-right:auto;
+                height:50%;
+                background:blue;
+            }
+            #team1 {
+                float:left;
+                background:purple;
+                width:50%;
+                height:100%;
+            }
+            #team2 {
+                float:right;
+                background:green;
+                width:50%;
+                height:100%;
+            }
+            #bottom {
+                float:bottom;
+                height:50%;
+            }
+            #scoreboard {
+                float:left;
+                width:50%;
+                height:100%;
+            }
+            #log {
+                float:right;
+                background:gray;
+                width:50%;
+                height:100%;
+            }
+
+
+        </style>
+        <script language="javascript" type="text/javascript" src="./jquery.js"></script> 
+        <script language="javascript" type="text/javascript" src="./jquery.flot.js"></script> 
+        <script language="javascript" type="text/javascript" src="./jquery.flot.resize.js"></script>  
+        <script language="javascript" type="text/javascript" src="./jquery.flot.crosshair.js"></script>  
+    </head>
+    <body>
+        <div id='playerinfo'>
+            <div id='team1'></div>
+            <div id='team2'></div>
+        </div>
+        <div id='bottom'>
+            <div id='scoreboard'>
+            </div>
+            <div id='log'></div>
+        </div>
+        <script>
+            var plot;
+            var t1 = [[0, 0]];
+            var t2 = [[0, 0]];
+            var options = {
+                lines: {
+                    show: true,
+                    steps: true,
+                },
+                legend: {position: "sw" },
+                crosshair: {mode: "x" },
+                grid: { hoverable: true},
+                yaxis: {min: 0},
+            } 
+            function addData(points)
+            {
+                var tt= 0;
+                t1.push(points[0]);
+                t2.push(points[1]);
+                plot = $.plot($("#scoreboard"), [ {data: t1, label: "team 1"} , 
+                                           {data: t2, label: "team 2"}],
+                                           options);
+            }
+ 
+            $("#scoreboard").bind("plothover",  function (event, pos, item) {
+                latestPosition = pos;
+                if (!updateLegendTimeout)
+                updateLegendTimeout = setTimeout(updateLegend, 50);
+            }); 
+            var legends = $("#scoreboard .legend");
+            legends.each(function () {
+                // fix the widths so they don't jump around
+                $(this).css('width', $(this).width());
+            }); 
+            var updateLegendTimeout = null;
+            var latestPosition = null;
+            function updateLegend() {
+                updateLegendTimeout = null;
+
+                var pos = latestPosition;
+
+                var axes = plot.getAxes();
+                if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
+                pos.y < axes.yaxis.min || pos.y > axes.yaxis.max)
+                return;
+
+                var i, j, dataset = plot.getData();
+                for (i = 0; i < dataset.length; ++i) {
+                    var series = dataset[i];
+
+                    // find the nearest points, x-wise
+                    for (j = 0; j < series.data.length; ++j)
+                    if (series.data[j][0] > pos.x)
+                    break;
+
+                    // now interpolate
+                    var y, p1 = series.data[j - 1], p2 = series.data[j];
+                    if (p1 == null)
+                    y = p2[1];
+                    else if (p2 == null)
+                    y = p1[1];
+                    else
+                    y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
+
+                    legends.eq(i).text(series.label.replace(/=.*/, "= " + y.toFixed(2)));
+                }
+            }
+           
+            addData([[0,0],[0,0]]);            
+
+            $("#scoreboard").bind("plothover",  function (event, pos, item) {
+                latestPosition = pos;
+                if (!updateLegendTimeout)
+                updateLegendTimeout = setTimeout(updateLegend, 50);
+            });
+
+
+
+            var ws = new WebSocket("ws://127.0.0.1:8001/");
+            ws.onopen = function() {
+                ws.send("Hello Mr. Server!");
+            };
+            ws.onmessage = function (e) {
+                var data = e.data.split(" ");
+                console.log(data);
+                if (data[0] == 'score')
+                {
+                    var time =  parseInt(data[1]);
+                    var t1 = parseInt(data[2]);
+                    var t2 = parseInt(data[3]);
+                    if(time!=-1)
+                    {
+                    addData([[time,t1],[time,t2]]);
+                    }
+                }
+               // alert(e.data); 
+            };
+            ws.onclose = function() { };
+        
+            function getScore()
+            {
+                ws.send('score');
+                setTimeout(getScore,400);
+            }
+                setTimeout(getScore,1000);
+
+
+
+        </script>
+    
+    </body>
+</html>
