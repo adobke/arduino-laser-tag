@@ -48,11 +48,13 @@ class Game:
         return this.active
 
     def kill(this,shooterNum,targetNum):
-        shooter = this.getPlayer(shooterNum)
-        target = this.getPlayer(targetNum)
-        shooter.gotKill()
-        target.wasShot()
-        return shooter.__repr__() + ' --shoots-> ' + target.__repr__()
+        if this.active:
+            shooter = this.getPlayer(shooterNum)
+            target = this.getPlayer(targetNum)
+            shooter.gotKill()
+            target.wasShot()
+            return shooter.__repr__() + ' --shoots-> ' + target.__repr__()
+        return "INACTIVE " + shooter.__repr__() + ' --shoots-> ' + target.__repr__()
     
     def startGame(this):
         this.active=True
@@ -68,8 +70,12 @@ class Game:
             player.roundEnd()
     
     def getTime(this):
-        dtime = datetime.datetime.now() - this.startTime
-        return int(dtime.total_seconds())
+        if(this.active):
+            dtime = datetime.datetime.now() - this.startTime
+            return int(dtime.total_seconds())
+
+        else:
+            return -1
 
     def getScore(this):
         teamscores = []

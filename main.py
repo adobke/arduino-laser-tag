@@ -44,13 +44,16 @@ def main():
         time.sleep(.1)
 
 def socketCommand(commandstr = 'score'):
-    global game
+    if (commandstr == "score"):
+        score = game.getScore()
+        return "score " + str(game.getTime()) + " " +str(score[0][1]) + " "\
+    +str(score[1][1]) 
     return command(commandstr,game)
 
 def command(command,game = game):
     command = command.split()
     if command[0] == "kill":
-        killmsg  = game.getTime() + game.kill(int(command[1]),int(command[2]))
+        killmsg  = str(game.getTime()) + game.kill(int(command[1]),int(command[2]))
         log(glog,killmsg)
         return killmsg
     
@@ -58,7 +61,7 @@ def command(command,game = game):
         if not game.active:
             return "Game is not active"
         game.endRound()
-        log(glog,game.getTime(),"---endround---")
+        log(glog,str(game.getTime()) + " ---endround---")
         return "Game ended"
 
     elif command[0] == "score":
@@ -74,7 +77,7 @@ def command(command,game = game):
         if game.active:
             return "Game already started"
         game.startGame()
-        log(glog,game.getTime(),"---startround---")
+        log(glog,time.ctime() +" ---startround---")
         return "Game Started"
 
     elif command[0] =="isGameActive":
@@ -182,7 +185,7 @@ def writeSerial(ser,string):
 
 def monitorSerial(ser):
     while(True):
-        time.sleep(5)
+        time.sleep(.5)
         while ser.inWaiting()>0:
             data = ser.readline()
             if not data=="\n":

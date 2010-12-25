@@ -75,12 +75,15 @@ def handle_cnxn(csock,addr,hfunc):
         first_byte = chr(0x00)
         payload = data.encode('utf-8')
         pl = first_byte + payload + chr(0xFF)
+        print "SENDD " + pl
         csock.send(pl)
 
     # This is dependent on you - what you wish to send to the browser
     i = 0
     send(u"%s" % "hi")
-    send(hfunc())
+    while True:
+        data = csock.recv(1024)
+        send(hfunc(data[1:-1]))
 
 if __name__ == "__main__":
     start()
