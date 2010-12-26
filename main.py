@@ -1,3 +1,4 @@
+
 # main games
 import thread
 import serial
@@ -32,7 +33,6 @@ def main():
 
     writeSerial(xbee,'i44')
     time.sleep(1)
-    writeSerial(xbee,'s')
         
     
     run = True
@@ -40,6 +40,8 @@ def main():
         cin = raw_input(">>> ")
         if cin == 'stop':
             run = False
+        if cin == 'start':
+            writeSerial(xbee,'s')
         print command(cin, game)
         time.sleep(.1)
 
@@ -53,8 +55,9 @@ def socketCommand(commandstr = 'score'):
 def command(command,game = game):
     command = command.split()
     if command[0] == "kill":
-        killmsg  = str(game.getTime()) + game.kill(int(command[1]),int(command[2]))
+        killmsg  = str(game.getTime())+ " " + game.kill(int(command[1]),int(command[2]))
         log(glog,killmsg)
+        wsserve.sendToAll("log " + killmsg)
         return killmsg
     
     elif command[0] == "endround":
@@ -62,6 +65,7 @@ def command(command,game = game):
             return "Game is not active"
         game.endRound()
         log(glog,str(game.getTime()) + " ---endround---")
+        wsserve.sendToAll("log Game Ended")
         return "Game ended"
 
     elif command[0] == "score":
@@ -78,6 +82,7 @@ def command(command,game = game):
             return "Game already started"
         game.startGame()
         log(glog,time.ctime() +" ---startround---")
+        wsserve.sendToAll("log Game Started")
         return "Game Started"
 
     elif command[0] =="isGameActive":
@@ -87,7 +92,8 @@ def command(command,game = game):
         return "nothing"
 
 def log(filename,string):
-    print ">> " + string
+    if filename == glog:
+        print "> " + string
     f = open(filename,'a')
     f.write(string + '\n')
     f.close()
@@ -189,6 +195,7 @@ def monitorSerial(ser):
         while ser.inWaiting()>0:
             data = ser.readline()
             if not data=="\n":
+                print "<<< " + data
                 processSerial(data)
                 log(SERIALLOG,data[:-1])
     return
@@ -198,7 +205,7 @@ def processSerial(data):
     data = data.split()
     if len(data) > 0:
         if data[0] == 'k':
-            print socketCommand("kill " + data[1] + " " + data[2])
+            socketCommand("kill " + data[1] + " " + data[2])
     return
 '''
 class MyTCPHandler(SocketServer.BaseRequestHandler):

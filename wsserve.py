@@ -1,3 +1,4 @@
+import time
 import socket
 import sys
 import threading
@@ -7,7 +8,8 @@ import hashlib
 MYIP = '127.0.0.1'
 PORT = 8001
 
-def start(hfunc):
+clients = []
+def start(hfunc= lambda x: x):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # listen for upto 50 cnxns on port 8000
@@ -16,10 +18,21 @@ def start(hfunc):
     
     while True:
         csock,caddr = sock.accept()
+        clients.append(csock)
         print "Connection from: ", caddr
         # Start a thread to service each cnxn
         t = threading.Thread(target=handle_cnxn, args=(csock,caddr,hfunc))
         t.start()
+
+def sendToAll(data):
+    def send(data,csock):
+        first_byte = chr(0x00)
+        payload = data.encode('utf-8')
+        pl = first_byte + payload + chr(0xFF)
+        csock.send(pl)
+   
+    for client in clients:
+        send(data,client)
 
 
 def handle_cnxn(csock,addr,hfunc):
@@ -75,7 +88,7 @@ def handle_cnxn(csock,addr,hfunc):
         first_byte = chr(0x00)
         payload = data.encode('utf-8')
         pl = first_byte + payload + chr(0xFF)
-        print "SENDD " + pl
+        #print "SENDD " + pl
         csock.send(pl)
 
     # This is dependent on you - what you wish to send to the browser
@@ -83,7 +96,15 @@ def handle_cnxn(csock,addr,hfunc):
     send(u"%s" % "hi")
     while True:
         data = csock.recv(1024)
-        send(hfunc(data[1:-1]))
+        if data == '':
+            print str(addr) + " left"
+            clients.remove(csock)
+            break
+        else:
+            send(hfunc(data[1:-1]))
+
+
+
 
 if __name__ == "__main__":
     start()

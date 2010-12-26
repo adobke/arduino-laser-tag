@@ -48,13 +48,14 @@ class Game:
         return this.active
 
     def kill(this,shooterNum,targetNum):
+        shooter = this.getPlayer(shooterNum)
+        target = this.getPlayer(targetNum)
         if this.active:
-            shooter = this.getPlayer(shooterNum)
-            target = this.getPlayer(targetNum)
             shooter.gotKill()
             target.wasShot()
-            return shooter.__repr__() + ' --shoots-> ' + target.__repr__()
-        return "INACTIVE " + shooter.__repr__() + ' --shoots-> ' + target.__repr__()
+            return shooter.__repr__()[:17] + ' --shoots-> ' + target.__repr__()[:17]
+
+        return "INACTIVE " + shooter.__repr__()[:17] + ' --shoots-> ' +  target.__repr__()[:17]
     
     def startGame(this):
         this.active=True
